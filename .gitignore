@@ -1,0 +1,59 @@
+# Entorno de desarrollo
+.cache/
+.venv/
+__pycache__/
+*.pyc
+ERRMSG.TMP
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+/dist/
+/packaging/windows/runtime/
+*.zip
+
+# Secretos y credenciales locales
+.env
+.env.*
+!.env.example
+.credentials
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Ejecutables compilados localmente
+/bin/
+
+# Datos privados: proyectos, escenarios, corridas, meteorología y descargas
+/data/
+/build/
+/scenarios/
+/runs/
+/exports/
+*.sqlite
+*.sqlite3
+*.db
+*.sfc
+*.pfl
+*.out
+*.log
+*.tif
+*.tiff
+*.dem
+*.nc
+*.grib
+*.grb
+
+# Sólo se publican escenarios de validación oficial EPA
+/examples/*.json
+!/examples/epa_*.json
+
+# Documentación interna con continuidad e historial de corridas locales
+/AGENTS.md
+/PLAN.md
+/BITACORA.md
+
+# Capturas fuente privadas; el README usa sólo el compuesto saneado
+/docs/images/private/

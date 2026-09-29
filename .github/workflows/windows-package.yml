@@ -1,0 +1,95 @@
+name: Windows portable package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc-fortran unzip curl file
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: "3.12"
+          activate-environment: package
+      - name: Instalar GDAL
+        shell: bash -el {0}
+        run: conda install -y -c conda-forge gdal
+      - name: Compilar motores EPA para Windows
+        shell: msys2 {0}
+        run: packaging/windows/prepare-models.sh
+      - name: Compilar frontend
+        working-directory: frontend
+        run: npm ci; npm run build
+      - name: Instalar empaquetador
+        run: python -m pip install -r requirements.txt pyinstaller==6.16.0
+      - name: Incorporar utilidades GDAL
+        shell: pwsh
+        run: packaging/windows/collect-gdal.ps1
+      - name: Crear ejecutable portable
+        run: pyinstaller --noconfirm packaging/windows/aermod-screening.spec
+      - name: Verificar arranque del ejecutable
+        shell: pwsh
+        run: |
+          $stdout = Join-Path $env:RUNNER_TEMP "aermod-screening.stdout.log"
+          $stderr = Join-Path $env:RUNNER_TEMP "aermod-screening.stderr.log"
+          $process = Start-Process `
+            -FilePath "dist\AERMOD-Screening\AERMOD-Screening.exe" `
+            -PassThru `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr
+          try {
+            $healthy = $false
+            foreach ($attempt in 1..60) {
+              if ($process.HasExited) {
+                break
+              }
+              try {
+                $response = Invoke-RestMethod `
+                  -Uri "http://127.0.0.1:8765/health" `
+                  -TimeoutSec 1
+                if ($response.status -eq "ok") {
+                  $healthy = $true
+                  break
+                }
+              } catch {
+                Start-Sleep -Milliseconds 500
+              }
+            }
+            if (-not $healthy) {
+              Get-Content $stdout -ErrorAction SilentlyContinue
+              Get-Content $stderr -ErrorAction SilentlyContinue
+              throw "El ejecutable portable no respondió correctamente en /health"
+            }
+            python packaging/windows/smoke-test.py "http://127.0.0.1:8765"
+            if ($LASTEXITCODE -ne 0) {
+              Get-Content $stdout -ErrorAction SilentlyContinue
+              Get-Content $stderr -ErrorAction SilentlyContinue
+              throw "El ejecutable portable no completó la corrida EPA"
+            }
+          } finally {
+            if (-not $process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+            }
+          }
+      - name: Comprimir paquete
+        shell: pwsh
+        run: Compress-Archive -Path dist\AERMOD-Screening -DestinationPath dist\AERMOD-Screening-Windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AERMOD-Screening-Windows-x64
+          path: dist/AERMOD-Screening-Windows-x64.zip
+          if-no-files-found: error

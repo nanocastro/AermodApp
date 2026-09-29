@@ -1,0 +1,33 @@
+{
+  "name": "POINT, FLAT, NO DOWNWASH",
+  "pollutant_id": "OTHER",
+  "dispersion_mode": "rural",
+  "source": {
+    "source_id": "SOURCE",
+    "emission_rate_g_s": 1.0,
+    "stack_height_m": 61.0,
+    "stack_temperature_k": 415.0,
+    "exit_velocity_m_s": 11.0,
+    "stack_diameter_m": 5.0
+  },
+  "meteorology": {
+    "minimum_wind_speed_m_s": 0.5,
+    "anemometer_height_m": 10.0,
+    "minimum_temperature_k": 270.0,
+    "maximum_temperature_k": 310.0,
+    "albedo": 0.14,
+    "bowen_ratio": 0.63,
+    "surface_roughness_m": 0.128,
+    "wind_direction_deg": 270.0,
+    "adjust_friction_velocity": false
+  },
+  "receptors": {
+    "ambient_boundary_distance_m": 50.0,
+    "search_start_m": 1350.0,
+    "search_end_m": 1850.0,
+    "search_step_m": 5.0,
+    "base_elevation_m": 25.0,
+    "receptor_height_m": 0.0
+  }
+}
+
